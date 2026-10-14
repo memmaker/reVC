@@ -537,8 +537,9 @@ CCutsceneMgr::Update(void)
 			UpdateCutsceneObjectBoundingBox(ms_pCutsceneObjects[i]->GetClump(), modelId);
 	}
 
-	if (bCamLoaded)
-		if (CGeneral::faststricmp(ms_cutsceneName, "finale") && TheCamera.Cams[TheCamera.ActiveCam].Mode == CCam::MODE_FLYBY && ms_cutsceneLoadStatus == CUTSCENE_LOADING_0) {
+	// modern: every cutscene is skippable, camera-driven or not, the finale too
+	if (ms_cutsceneProcessing)
+		if (ms_cutsceneLoadStatus == CUTSCENE_LOADING_0) {
 			if (CPad::GetPad(0)->GetCrossJustDown()
 				|| (CGame::playingIntro && CPad::GetPad(0)->GetStartJustDown())
 #ifdef GTA_PC_CONTROLS

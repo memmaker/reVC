@@ -22,6 +22,7 @@
 #include "RpAnimBlend.h"
 #include "Automobile.h"
 #include "General.h"
+#include "Frontend.h"
 
 namespace Modern {
 
@@ -91,6 +92,9 @@ void
 ProcessPlayer(CPlayerPed *ped, CPad *pad)
 {
 	wheelPed = ped;
+	// save anywhere: F5 opens the save menu like a save point would
+	if(pad->GetFJustDown(4) && !FrontEndMenuManager.m_bMenuActive)
+		FrontEndMenuManager.m_bActivateSaveMenu = true;
 	// first person: hide the player's own model, give it back when we leave
 	static bool hid;
 	if(bFirstPerson && !ped->bInVehicle){ ped->bIsVisible = false; hid = true; }
