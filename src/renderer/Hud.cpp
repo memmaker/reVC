@@ -5,6 +5,7 @@
 #include "Clock.h"
 #include "Darkel.h"
 #include "Hud.h"
+#include "modern.h"
 #include "Messages.h"
 #include "Frontend.h"
 #include "Font.h"
@@ -1429,6 +1430,7 @@ void CHud::Draw()
 			BigMessageInUse[2] = 0.0f;
 		}
 	}
+	Modern::DrawHud();
 }
 
 void CHud::DrawAfterFade()

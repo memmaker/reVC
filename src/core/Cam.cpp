@@ -26,6 +26,7 @@
 #include "SceneEdit.h"
 #include "Debug.h"
 #include "Camera.h"
+#include "modern.h"
 #include "DMAudio.h"
 #include "Bike.h"
 #include "Pickups.h"
@@ -37,7 +38,7 @@ extern float fRangePlayerRadius;
 extern float fCloseNearClipLimit;
 
 #ifdef FREE_CAM
-bool CCamera::bFreeCam = false;
+bool CCamera::bFreeCam = true; // modern: free orbit camera on by default
 int nPreviousMode = -1;
 #endif
 
@@ -1447,6 +1448,15 @@ CCam::Process_FollowPedWithMouse(const CVector &CameraTarget, float TargetOrient
 	Front.y = Cos(Alpha) * -Sin(Beta);
 	Front.z = Sin(Alpha);
 	Source = TargetCoors - Front*CamDist;
+	// modern: first person on the head bone / over-the-shoulder while free aiming
+	if(Modern::bFirstPerson){
+		Source = ((CPed*)CamTargetEntity)->GetNodePosition(PED_HEAD) + Front*0.15f;
+		TargetCoors = Source + Front;
+	}else if(((CPlayerPed*)CamTargetEntity)->m_bFreeAimActive){
+		CVector right = CrossProduct(Front, CVector(0.0f, 0.0f, 1.0f)); right.Normalise();
+		TargetCoors += right*0.45f;
+		Source = TargetCoors - Front*(CamDist*0.6f);
+	}
 	m_cvecTargetCoorsForFudgeInter = TargetCoors;
 
 	// Clip Source and fix near clip
@@ -1525,6 +1535,7 @@ CCam::Process_FollowPedWithMouse(const CVector &CameraTarget, float TargetOrient
 	TheCamera.m_bCamDirectlyBehind = false;
 
 	GetVectorsReadyForRW();
+	if(Modern::bFirstPerson) RwCameraSetNearClipPlane(Scene.camera, 0.05f);
 
 	if(((CPed*)CamTargetEntity)->CanStrafeOrMouseControl() && CDraw::FadeValue < 250 &&
 	   (TheCamera.GetFadingDirection() != FADE_OUT || CDraw::FadeValue <= 100) &&
@@ -5170,7 +5181,8 @@ CCam::Process_FollowCar_SA(const CVector& CameraTarget, float TargetOrientation,
 			yMovement = 0.0;
 			xMovement = 0.0;
 			targetAlpha = Alpha;
-			stepsLeftToChangeBetaByMouse = Max(0.0f, stepsLeftToChangeBetaByMouse - CTimer::GetTimeStep());
+			// modern: no auto-centering, the camera stays where the mouse left it
+			// stepsLeftToChangeBetaByMouse = Max(0.0f, stepsLeftToChangeBetaByMouse - CTimer::GetTimeStep());
 			mouseChangesBeta = true;
 		}
 	}

@@ -2,6 +2,7 @@
 
 #include "RwHelper.h"
 #include "PlayerPed.h"
+#include "modern.h"
 #include "Wanted.h"
 #include "Fire.h"
 #include "DMAudio.h"
@@ -1705,6 +1706,7 @@ CPlayerPed::ProcessControl(void)
 		return;
 
 	CPad *padUsed = GetPadFromPlayer(this);
+	Modern::ProcessPlayer(this, padUsed);
 	m_pWanted->Update();
 	PruneReferences();
 

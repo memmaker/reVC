@@ -2479,6 +2479,16 @@ CWeapon::FireM16_1stPerson(CEntity *shooter)
 	return true;
 }
 
+static const CVector *gFreeDir; // modern: set while FireFromCarFree runs
+
+void
+CWeapon::FireFromCarFree(CVehicle *shooter, const CVector &dir)
+{
+	gFreeDir = &dir;
+	FireFromCar(shooter, false, true);
+	gFreeDir = nil;
+}
+
 bool
 CWeapon::FireInstantHitFromCar(CVehicle *shooter, bool left, bool right)
 {
@@ -2558,12 +2568,15 @@ CWeapon::FireInstantHitFromCar(CVehicle *shooter, bool left, bool right)
 		else
 			target = source + info->m_fRange * shooter->GetRight();
 	}
+	if ( gFreeDir )
+		target = source + info->m_fRange * *gFreeDir;
 
 	target += CVector(float(CGeneral::GetRandomNumber()&255)*0.01f-1.28f,
 						float(CGeneral::GetRandomNumber()&255)*0.01f-1.28f,
 						float(CGeneral::GetRandomNumber()&255)*0.01f-1.28f);
 
-	DoDriveByAutoAiming(FindPlayerPed(), shooter, &source, &target);
+	if ( !gFreeDir )
+		DoDriveByAutoAiming(FindPlayerPed(), shooter, &source, &target);
 
 	CEventList::RegisterEvent(EVENT_GUNSHOT, EVENT_ENTITY_PED, FindPlayerPed(), FindPlayerPed(), 1000);
 

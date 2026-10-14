@@ -146,7 +146,7 @@ void RestoreDefDisplay(int8 action) {
 		FrontEndMenuManager.m_PrefsCutsceneBorders = true;
 	#endif
 	#ifdef FREE_CAM
-		TheCamera.bFreeCam = false;
+		TheCamera.bFreeCam = true;
 	#endif
 	#ifdef PED_CAR_DENSITY_SLIDERS
 		CIniFile::LoadIniFile();

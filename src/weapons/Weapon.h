@@ -40,6 +40,7 @@ public:
 	void Shutdown();
 	
 	bool Fire          (CEntity *shooter, CVector *fireSource);
+	void FireFromCarFree(CVehicle *shooter, const CVector &dir); // modern: camera-aimed drive-by
 	bool FireFromCar   (CVehicle *shooter, bool left, bool right);
 	bool FireMelee     (CEntity *shooter, CVector &fireSource);
 	bool FireInstantHit(CEntity *shooter, CVector *fireSource);

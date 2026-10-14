@@ -12,6 +12,7 @@
 #endif
 
 #include "Pad.h"
+#include "modern.h"
 #include "ControllerConfig.h"
 #include "Timer.h"
 #include "Frontend.h"
@@ -2649,14 +2650,14 @@ int16 CPad::GetBrake(void)
 		case 0:
 		case 2:
 		{
-			return NewState.Square;
+			return Max(NewState.Square, (int16)(Modern::TriggerL*255)); // modern: analog trigger
 
 			break;
 		}
 
 		case 1:
 		{
-			return NewState.Square;
+			return Max(NewState.Square, (int16)(Modern::TriggerL*255)); // modern: analog trigger
 
 			break;
 		}
@@ -2814,14 +2815,14 @@ int16 CPad::GetAccelerate(void)
 		case 0:
 		case 2:
 		{
-			return NewState.Cross;
+			return Max(NewState.Cross, (int16)(Modern::TriggerR*255)); // modern: analog trigger
 
 			break;
 		}
 
 		case 1:
 		{
-			return NewState.Cross;
+			return Max(NewState.Cross, (int16)(Modern::TriggerR*255)); // modern: analog trigger
 
 			break;
 		}

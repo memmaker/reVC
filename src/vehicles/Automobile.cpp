@@ -48,6 +48,7 @@
 #include "PlayerPed.h"
 #include "Object.h"
 #include "Automobile.h"
+#include "modern.h"
 #include "Bike.h"
 #include "Wanted.h"
 #include "SaveBuf.h"
@@ -3875,6 +3876,8 @@ CAutomobile::DoDriveByShootings(void)
 		return;
 
 	weapon->Update(pDriver->m_audioEntityId, nil);
+	if(Modern::DriveByFree(this))
+		return;
 
 	bool lookingLeft = false;
 	bool lookingRight = false;

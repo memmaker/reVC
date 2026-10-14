@@ -33,6 +33,7 @@
 #include "Debug.h"
 #include "GenericGameStorage.h"
 #include "Camera.h"
+#include "modern.h"
 
 enum
 {
@@ -988,8 +989,10 @@ CCamera::CamControl(void)
 			   !m_WideScreenOn && !m_bFailedCullZoneTestPreviously && !m_bFirstPersonBeingUsed){
 #ifdef GTA_PC_CONTROLS
 				if(FrontEndMenuManager.m_ControlMethod == CONTROL_STANDARD){
-					if(PedZoomIndicator == CAM_ZOOM_3)
-						PedZoomIndicator = CAM_ZOOM_1;
+					// modern: near -> far -> first person -> near
+					if(Modern::bFirstPerson){ Modern::bFirstPerson = false; PedZoomIndicator = CAM_ZOOM_1; }
+					else if(PedZoomIndicator == CAM_ZOOM_3)
+						Modern::bFirstPerson = true;
 					else
 						PedZoomIndicator = CAM_ZOOM_3;
 				}else
@@ -1001,8 +1004,10 @@ CCamera::CamControl(void)
 			   !m_WideScreenOn && !m_bFailedCullZoneTestPreviously && !m_bFirstPersonBeingUsed){
 #ifdef GTA_PC_CONTROLS
 				if(FrontEndMenuManager.m_ControlMethod == CONTROL_STANDARD){
-					if(PedZoomIndicator == CAM_ZOOM_3)
-						PedZoomIndicator = CAM_ZOOM_1;
+					// modern: near -> far -> first person -> near
+					if(Modern::bFirstPerson){ Modern::bFirstPerson = false; PedZoomIndicator = CAM_ZOOM_1; }
+					else if(PedZoomIndicator == CAM_ZOOM_3)
+						Modern::bFirstPerson = true;
 					else
 						PedZoomIndicator = CAM_ZOOM_3;
 				}else

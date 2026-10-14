@@ -6,6 +6,7 @@
 
 #include "RwHelper.h"
 #include "Radar.h"
+#include "modern.h"
 #include "Camera.h"
 #include "Hud.h"
 #include "World.h"
@@ -546,6 +547,7 @@ void CRadar::DrawBlips()
 		TransformRadarPointToScreenSpace(out, in);
 
 		if (!FrontEndMenuManager.m_bMenuMapActive) {
+			Modern::DrawGPS();
 			float angle;
 			if (TheCamera.Cams[TheCamera.ActiveCam].Mode == CCam::MODE_TOPDOWN)
 				angle = PI + FindPlayerHeading();

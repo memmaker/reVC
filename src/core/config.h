@@ -460,10 +460,14 @@ static_assert(false, "SUPPORT_XBOX_SCRIPT and SUPPORT_MOBILE_SCRIPT are mutually
 #define PAUSE_RADIO_IN_FRONTEND // pause radio when game is paused
 #define ATTACH_RELEASING_SOUNDS_TO_ENTITIES // sounds would follow ped and vehicles coordinates if not being queued otherwise
 #define USE_TIME_SCALE_FOR_AUDIO // slow down/speed up sounds according to the speed of the game
+#ifndef __EMSCRIPTEN__
 #define MULTITHREADED_AUDIO // for streams. requires C++11 or later
+#endif
 
 #ifdef AUDIO_OPUS
+#ifndef __EMSCRIPTEN__
 #define AUDIO_OAL_USE_OPUS // enable support of opus files
+#endif
 //#define OPUS_AUDIO_PATHS // (not supported on VC yet) changes audio paths to opus paths (doesn't work if AUDIO_OAL_USE_OPUS isn't enabled)
 //#define OPUS_SFX  // enable if your sfx.raw is encoded with opus (doesn't work if AUDIO_OAL_USE_OPUS isn't enabled)
 

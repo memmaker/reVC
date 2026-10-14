@@ -9,6 +9,9 @@ long _dwOperatingSystemVersion;
 #include <stddef.h>
 #include <stdio.h>
 #include <unordered_map>
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 
 #include "common.h"
 #include "rwcore.h"
@@ -20,6 +23,7 @@ long _dwOperatingSystemVersion;
 #include "FileMgr.h"
 #include "Text.h"
 #include "Pad.h"
+#include "modern.h"
 #include "Timer.h"
 #include "DMAudio.h"
 #include "ControllerConfig.h"
@@ -90,7 +94,8 @@ void _psCreateFolder(const char *path)
     debug("Creating Folder Path: %s", path);
     struct stat info;
     char fullpath[PATH_MAX];
-    realpath(path, fullpath);
+    if (realpath(path, fullpath) == NULL) // a folder that doesn't exist yet has no real path: make it as given
+        strncpy(fullpath, path, sizeof(fullpath) - 1);
 
     if (lstat(fullpath, &info) != 0) {
         if (errno == ENOENT || (errno != EACCES && !S_ISDIR(info.st_mode))) {
@@ -179,7 +184,9 @@ double
 psTimer(void)
 {
     struct timespec start;
-#if defined(CLOCK_MONOTONIC_RAW)
+#if defined(__EMSCRIPTEN__) // CLOCK_MONOTONIC_RAW is declared but unsupported (EINVAL): time would stand still
+    clock_gettime(CLOCK_MONOTONIC, &start);
+#elif defined(CLOCK_MONOTONIC_RAW)
     clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 #elif defined(CLOCK_MONOTONIC_FAST)
     clock_gettime(CLOCK_MONOTONIC_FAST, &start);
@@ -333,7 +340,9 @@ psInitialize(void)
     FrontEndMenuManager.LoadSettings();
 #endif
 
-#ifndef __APPLE__
+#ifdef __EMSCRIPTEN__
+    _dwMemAvailPhys = 1024u * 1024u * 1024u; // wasm memory grows on demand; the game only wants "enough"
+#elif !defined(__APPLE__)
     struct sysinfo systemInfo;
     sysinfo(&systemInfo);
     _dwMemAvailPhys = systemInfo.freeram;
@@ -595,6 +604,11 @@ psSelectDevice()
             }
         }
 
+#ifdef __EMSCRIPTEN__
+        // a browser has no exclusive modes: the canvas is the window, whatever size the page gives it
+        if(bestFsMode < 0 || FrontEndMenuManager.m_nPrefsWindowed)
+            bestFsMode = bestWndMode;
+#endif
         if(bestFsMode < 0){
             printf("WARNING: Cannot find desired video mode, selecting device cancelled\n");
             return FALSE;
@@ -615,9 +629,14 @@ psSelectDevice()
         GcurSelVM = bestWndMode;
 
     // Now GcurSelVM is 0 but vm has sizes(and fullscreen flag) of the video mode we want, that's why we changed the rwVIDEOMODEEXCLUSIVE conditions below
+#ifdef __EMSCRIPTEN__
+    if (!FrontEndMenuManager.m_nPrefsWindowed) // windowed keeps the page's canvas size from the ini
+#endif
+    {
     FrontEndMenuManager.m_nPrefsWidth = vm.width;
     FrontEndMenuManager.m_nPrefsHeight = vm.height;
     FrontEndMenuManager.m_nPrefsDepth = vm.depth;
+    }
 #endif
 
 #ifndef PS2_MENU
@@ -1297,6 +1316,7 @@ void windowFocusCB(int focused) {
 void
 windowIconifyCB(int iconified) {
     WindowIconified = !!iconified;
+
 }
 
 void inputEventHandler() {
@@ -1371,150 +1391,53 @@ void inputEventHandler() {
 /*
  *****************************************************************************
  */
-int
-main(int argc, char *argv[])
+// The game loop as one frame per call: the browser (Emscripten) drives it
+// from requestAnimationFrame, the desktop loops over it. Phase 0 enters a
+// (re)start, 1 runs frames, 2 is finished.
+static int gMainPhase;
+static RwV2d pos;
+
+static void
+mainFinish(void)
 {
-    RwV2d pos;
-    RwInt32 i;
 
-#ifdef USE_CUSTOM_ALLOCATOR
-    InitMemoryMgr();
+
+#ifndef MASTER
+    if ( gbModelViewer )
+        CAnimViewer::Shutdown();
+    else
 #endif
+    if ( gGameState == GS_PLAYING_GAME )
+        CGame::ShutDown();
 
-    struct sigaction act;
-    act.sa_sigaction = terminateHandler;
-    act.sa_flags = SA_SIGINFO;
-    sigaction(SIGTERM, &act, NULL);
-#ifdef FLUSHABLE_STREAMING
-    struct sigaction sa;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_handler = dummyHandler;
-    sa.sa_flags = 0;
-    sigaction(SIGUSR1, &sa, NULL);
-#endif
+    DMAudio.Terminate();
 
-    for(i = 1; i < argc; i++)
-    {
-        if(strcmp(argv[i], "--dir") == 0 && i + 1 < argc) {
-            const char *gamePath = argv[i+1];
-            setenv("STORAGE_ROOT", gamePath, 1);
-        }
-    }
+    _psFreeVideoModeList();
+
 
     /*
-     * Initialize the platform independent data.
-     * This will in turn initialize the platform specific data...
+     * Tidy up the 3D (RenderWare) components of the application...
      */
-    if( RsEventHandler(rsINITIALIZE, nil) == rsEVENTERROR )
-    {
-        return FALSE;
-    }
-
-    for(i=1; i<argc; i++)
-    {
-        RsEventHandler(rsPREINITCOMMANDLINE, argv[i]);
-    }
+    RsEventHandler(rsRWTERMINATE, nil);
 
     /*
-     * Parameters to be used in RwEngineOpen / rsRWINITIALISE event
+     * Free the platform dependent data...
      */
+    RsEventHandler(rsTERMINATE, nil);
 
-    openParams.width = RsGlobal.maximumWidth;
-    openParams.height = RsGlobal.maximumHeight;
-    openParams.windowtitle = RsGlobal.appName;
-    openParams.window = &PSGLOBAL(window);
-
-    ControlsManager.MakeControllerActionsBlank();
-    ControlsManager.InitDefaultControlConfiguration();
-
-    /*
-     * Initialize the 3D (RenderWare) components of the app...
-     */
-    if( rsEVENTERROR == RsEventHandler(rsRWINITIALIZE, &openParams) )
-    {
-        RsEventHandler(rsTERMINATE, nil);
-
-        return 0;
-    }
-
-    psPostRWinit();
-
-    ControlsManager.InitDefaultControlConfigMouse(MousePointerStateHelper.GetMouseSetUp());
-
-//	glfwSetWindowPos(PSGLOBAL(window), 0, 0);
-
-    /*
-     * Parse command line parameters (except program name) one at
-     * a time AFTER RenderWare initialization...
-     */
-    for(i=1; i<argc; i++)
-    {
-        RsEventHandler(rsCOMMANDLINE, argv[i]);
-    }
-
-    /*
-     * Force a camera resize event...
-     */
-    {
-        RwRect r;
-
-        r.x = 0;
-        r.y = 0;
-        r.w = RsGlobal.maximumWidth;
-        r.h = RsGlobal.maximumHeight;
-
-        RsEventHandler(rsCAMERASIZE, &r);
-    }
-
-    {
-        CFileMgr::SetDirMyDocuments();
-
-#ifdef LOAD_INI_SETTINGS
-        // At this point InitDefaultControlConfigJoyPad must have set all bindings to default and ms_padButtonsInited to number of detected buttons.
-        // We will load stored bindings below, but let's cache ms_padButtonsInited before LoadINIControllerSettings and LoadSettings clears it,
-        // so we can add new joy bindings **on top of** stored bindings.
-        int connectedPadButtons = ControlsManager.ms_padButtonsInited;
+    gMainPhase = 2;
+#ifdef __EMSCRIPTEN__
+    emscripten_cancel_main_loop();
+    exit(0);
 #endif
+}
 
-        int32 gta3set = CFileMgr::OpenFile("gta_vc.set", "r");
-
-        if ( gta3set )
-        {
-            ControlsManager.LoadSettings(gta3set);
-            CFileMgr::CloseFile(gta3set);
-        }
-
-        CFileMgr::SetDir("");
-
-#ifdef LOAD_INI_SETTINGS
-        LoadINIControllerSettings();
-        if (connectedPadButtons != 0)
-            ControlsManager.InitDefaultControlConfigJoyPad(connectedPadButtons); // add (connected-saved) amount of new button assignments on top of ours
-
-        // these have 2 purposes: creating .ini at the start, and adding newly introduced settings to old .ini at the start
-        SaveINISettings();
-        SaveINIControllerSettings();
-#endif
-    }
-
-#ifdef PS2_MENU
-    int32 r = TheMemoryCard.CheckCardStateAtGameStartUp(CARD_ONE);
-	if (   r == CMemoryCard::ERR_DIRNOENTRY  || r == CMemoryCard::ERR_NOFORMAT
-		&& r != CMemoryCard::ERR_OPENNOENTRY && r != CMemoryCard::ERR_NONE )
-	{
-		LoadingScreen(nil, nil, "loadsc0");
-
-		TheText.Unload();
-		TheText.Load();
-
-		CFont::Initialise();
-
-		FrontEndMenuManager.DrawMemoryCardStartUpMenus();
-	}
-#endif
-
-    while ( TRUE )
+static void
+mainFrame(void)
+{
+    if ( gMainPhase == 0 )
     {
+        gMainPhase = 1;
         RwInitialised = TRUE;
 
         /*
@@ -1549,11 +1472,10 @@ main(int argc, char *argv[])
 
 		CTimer::Update();
 
-		while( !RsGlobal.quit && !(FrontEndMenuManager.m_bWantToRestart || TheMemoryCard.b_FoundRecentSavedGameWantToLoad) && !SDL_QuitRequested())
-#else
-        while( !RsGlobal.quit && !FrontEndMenuManager.m_bWantToRestart && !SDL_QuitRequested())
 #endif
-        {
+    }
+    if ( !RsGlobal.quit && !FrontEndMenuManager.m_bWantToRestart && !SDL_QuitRequested() )
+    {
             inputEventHandler();
 
 #ifndef MASTER
@@ -1777,7 +1699,8 @@ main(int argc, char *argv[])
                 }
 
             }
-        }
+        return;
+    }
 
 
         /*
@@ -1788,10 +1711,10 @@ main(int argc, char *argv[])
         FrontEndMenuManager.UnloadTextures();
 #ifdef PS2_MENU
         if ( !(FrontEndMenuManager.m_bWantToRestart || TheMemoryCard.b_FoundRecentSavedGameWantToLoad))
-			break;
+			{ mainFinish(); return; }
 #else
         if ( !FrontEndMenuManager.m_bWantToRestart )
-            break;
+            { mainFinish(); return; }
 #endif
 
         CPad::ResetCheats();
@@ -1818,13 +1741,13 @@ main(int argc, char *argv[])
 			DMAudio.ChangeMusicMode(MUSICMODE_GAME);
 			FrontEndMenuManager.m_bWantToRestart = false;
 
-			continue;
+			{ gMainPhase = 0; return; }
 		}
 
 		CGame::ShutDown();
 		CTimer::Stop();
 
-		break;
+		{ mainFinish(); return; }
 #else
         if ( FrontEndMenuManager.m_bWantToLoad )
         {
@@ -1861,32 +1784,156 @@ main(int argc, char *argv[])
         FrontEndMenuManager.m_bFirstTime = false;
         FrontEndMenuManager.m_bWantToRestart = false;
 #endif
+    gMainPhase = 0;
+}
+
+int
+main(int argc, char *argv[])
+{
+    RwInt32 i;
+
+#ifdef USE_CUSTOM_ALLOCATOR
+    InitMemoryMgr();
+#endif
+
+    struct sigaction act;
+    act.sa_sigaction = terminateHandler;
+    act.sa_flags = SA_SIGINFO;
+    sigaction(SIGTERM, &act, NULL);
+#ifdef FLUSHABLE_STREAMING
+    struct sigaction sa;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_handler = dummyHandler;
+    sa.sa_flags = 0;
+    sigaction(SIGUSR1, &sa, NULL);
+#endif
+
+    for(i = 1; i < argc; i++)
+    {
+        if(strcmp(argv[i], "--dir") == 0 && i + 1 < argc) {
+            const char *gamePath = argv[i+1];
+            setenv("STORAGE_ROOT", gamePath, 1);
+        }
     }
 
+    /*
+     * Initialize the platform independent data.
+     * This will in turn initialize the platform specific data...
+     */
+    if( RsEventHandler(rsINITIALIZE, nil) == rsEVENTERROR )
+    {
+        return FALSE;
+    }
 
-#ifndef MASTER
-    if ( gbModelViewer )
-        CAnimViewer::Shutdown();
-    else
+    for(i=1; i<argc; i++)
+    {
+        RsEventHandler(rsPREINITCOMMANDLINE, argv[i]);
+    }
+
+    /*
+     * Parameters to be used in RwEngineOpen / rsRWINITIALISE event
+     */
+
+    openParams.width = RsGlobal.maximumWidth;
+    openParams.height = RsGlobal.maximumHeight;
+    openParams.windowtitle = RsGlobal.appName;
+    openParams.window = &PSGLOBAL(window);
+
+    ControlsManager.MakeControllerActionsBlank();
+    ControlsManager.InitDefaultControlConfiguration();
+
+    /*
+     * Initialize the 3D (RenderWare) components of the app...
+     */
+    if( rsEVENTERROR == RsEventHandler(rsRWINITIALIZE, &openParams) )
+    {
+        RsEventHandler(rsTERMINATE, nil);
+
+        return 0;
+    }
+
+    psPostRWinit();
+
+    ControlsManager.InitDefaultControlConfigMouse(MousePointerStateHelper.GetMouseSetUp());
+
+//	glfwSetWindowPos(PSGLOBAL(window), 0, 0);
+
+    /*
+     * Parse command line parameters (except program name) one at
+     * a time AFTER RenderWare initialization...
+     */
+    for(i=1; i<argc; i++)
+    {
+        RsEventHandler(rsCOMMANDLINE, argv[i]);
+    }
+
+    /*
+     * Force a camera resize event...
+     */
+    {
+        RwRect r;
+
+        r.x = 0;
+        r.y = 0;
+        r.w = RsGlobal.maximumWidth;
+        r.h = RsGlobal.maximumHeight;
+
+        RsEventHandler(rsCAMERASIZE, &r);
+    }
+
+    {
+        CFileMgr::SetDirMyDocuments();
+
+#ifdef LOAD_INI_SETTINGS
+        // At this point InitDefaultControlConfigJoyPad must have set all bindings to default and ms_padButtonsInited to number of detected buttons.
+        // We will load stored bindings below, but let's cache ms_padButtonsInited before LoadINIControllerSettings and LoadSettings clears it,
+        // so we can add new joy bindings **on top of** stored bindings.
+        int connectedPadButtons = ControlsManager.ms_padButtonsInited;
 #endif
-    if ( gGameState == GS_PLAYING_GAME )
-        CGame::ShutDown();
 
-    DMAudio.Terminate();
+        int32 gta3set = CFileMgr::OpenFile("gta_vc.set", "r");
 
-    _psFreeVideoModeList();
+        if ( gta3set )
+        {
+            ControlsManager.LoadSettings(gta3set);
+            CFileMgr::CloseFile(gta3set);
+        }
 
+        CFileMgr::SetDir("");
 
-    /*
-     * Tidy up the 3D (RenderWare) components of the application...
-     */
-    RsEventHandler(rsRWTERMINATE, nil);
+#ifdef LOAD_INI_SETTINGS
+        LoadINIControllerSettings();
+        if (connectedPadButtons != 0)
+            ControlsManager.InitDefaultControlConfigJoyPad(connectedPadButtons); // add (connected-saved) amount of new button assignments on top of ours
 
-    /*
-     * Free the platform dependent data...
-     */
-    RsEventHandler(rsTERMINATE, nil);
+        // these have 2 purposes: creating .ini at the start, and adding newly introduced settings to old .ini at the start
+        SaveINISettings();
+        SaveINIControllerSettings();
+#endif
+    }
 
+#ifdef PS2_MENU
+    int32 r = TheMemoryCard.CheckCardStateAtGameStartUp(CARD_ONE);
+	if (   r == CMemoryCard::ERR_DIRNOENTRY  || r == CMemoryCard::ERR_NOFORMAT
+		&& r != CMemoryCard::ERR_OPENNOENTRY && r != CMemoryCard::ERR_NONE )
+	{
+		LoadingScreen(nil, nil, "loadsc0");
+
+		TheText.Unload();
+		TheText.Load();
+
+		CFont::Initialise();
+
+		FrontEndMenuManager.DrawMemoryCardStartUpMenus();
+	}
+#endif
+
+#ifdef __EMSCRIPTEN__
+    emscripten_set_main_loop(mainFrame, 0, 1);
+#else
+    while ( gMainPhase != 2 )
+        mainFrame();
+#endif
     return 0;
 }
 
@@ -1942,6 +1989,8 @@ void CapturePad(RwInt32 padID)
 
         // glfw returns 0.0 for non-existent axises(which is bullocks) so we treat it as deadzone, and keep value of previous frame.
         // otherwise if this axis is present, -1 = released, 1 = pressed
+        Modern::TriggerL = Max(0.0f, (lt + 1.0f) * 0.5f);
+        Modern::TriggerR = Max(0.0f, (rt + 1.0f) * 0.5f);
         if (lt != 0.0f)
             ControlsManager.m_NewState.mappedButtons[15] = lt > -0.8f;
 
