@@ -28,5 +28,6 @@
 - [x] Cover system: Duck (C) facing a wall within 1.2 m snaps to it; holding aim pops out, releasing re-ducks; moving leaves cover
 
 ## Notes
+- Retail two-disc set (Install BIN/CUE with InstallShield data1.hdr/dataN.cab + Play BIN/CUE with Audio/) imports and plays: tested with ~/Downloads/GTAVC
 - Native data for testing: ~/Games/GTA-VC (installer payload + reVC gamefiles). `./build_n_run.sh` builds and runs it.
 - librw changes (WebGL2 shader decl, ES-only SDL profile) live inside the submodule: fold librw into the repo before pushing.
