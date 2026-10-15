@@ -40,9 +40,13 @@ ALDeviceList::ALDeviceList()
 
 	defaultDeviceIndex = 0;
 
-	if (alcIsExtensionPresent(NULL, "ALC_ENUMERATION_EXT")) {
-		devices = (char *)alcGetString(NULL, ALC_ALL_DEVICES_SPECIFIER);
-		defaultDeviceName = (char *)alcGetString(NULL, ALC_DEFAULT_ALL_DEVICES_SPECIFIER);
+	// modern: Emscripten's OpenAL has neither ALC_ENUMERATION_EXT nor ALC_ENUMERATE_ALL_EXT;
+	// ALC_DEVICE_SPECIFIER is core and lists the one device it has
+	bool all = alcIsExtensionPresent(NULL, "ALC_ENUMERATE_ALL_EXT");
+	ALCenum devSpec = all ? ALC_ALL_DEVICES_SPECIFIER : ALC_DEVICE_SPECIFIER;
+	devices = (char *)alcGetString(NULL, devSpec);
+	defaultDeviceName = (char *)alcGetString(NULL, all ? ALC_DEFAULT_ALL_DEVICES_SPECIFIER : ALC_DEFAULT_DEVICE_SPECIFIER);
+	if (devices && defaultDeviceName) {
 		
 		index = 0;
 		// go through device list (each device terminated with a single NULL, list terminated with double NULL)
@@ -56,7 +60,7 @@ ALDeviceList::ALDeviceList()
 				if (context) {
 					alcMakeContextCurrent(context);
 					// if new actual device name isn't already in the list, then add it...
-					actualDeviceName = alcGetString(device, ALC_ALL_DEVICES_SPECIFIER);
+					actualDeviceName = alcGetString(device, devSpec);
 					if ((actualDeviceName != NULL) && (strlen(actualDeviceName) > 0)) {
 						ALDEVICEINFO &ALDeviceInfo = aDeviceInfo[nNumOfDevices++];
 						ALDeviceInfo.bSelected = true;

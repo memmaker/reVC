@@ -857,6 +857,9 @@ RwBool _psSetVideoMode(RwInt32 subSystem, RwInt32 videoMode)
     RwInitialised = TRUE;
     useDefault = FALSE;
 
+    // modern: HiDPI canvas: the camera raster must match the drawable, not the CSS window size
+    SDL_GL_GetDrawableSize(PSGLOBAL(window), &RsGlobal.maximumWidth, &RsGlobal.maximumHeight);
+
     RwRect r;
 
     r.x = 0;
@@ -1293,11 +1296,10 @@ cursorCB(double xpos, double ypos) {
     if (!FrontEndMenuManager.m_bMenuActive)
         return;
 
-    // TODO remove?
-    //int winw, winh;
-    //SDL_GetWindowSize(PSGLOBAL(window), &winw, &winh);
-    FrontEndMenuManager.m_nMouseTempPosX = xpos; // * (RsGlobal.maximumWidth / winw);
-    FrontEndMenuManager.m_nMouseTempPosY = ypos; // * (RsGlobal.maximumHeight / winh);
+    int winw, winh;
+    SDL_GetWindowSize(PSGLOBAL(window), &winw, &winh);
+    FrontEndMenuManager.m_nMouseTempPosX = xpos * RsGlobal.maximumWidth / winw;
+    FrontEndMenuManager.m_nMouseTempPosY = ypos * RsGlobal.maximumHeight / winh;
 }
 
 void
@@ -1351,6 +1353,12 @@ void inputEventHandler() {
                     // TODO should it be minimized/maximized/restored instead of shown/hidden?
                     case SDL_WINDOWEVENT_SHOWN: windowIconifyCB(false); break;
                     case SDL_WINDOWEVENT_HIDDEN: windowIconifyCB(true); break;
+                    case SDL_WINDOWEVENT_SIZE_CHANGED: {
+                        int w, h;
+                        SDL_GL_GetDrawableSize(PSGLOBAL(window), &w, &h);
+                        resizeCB(w, h);
+                        break;
+                    }
                 }
                 break;
 
