@@ -5983,6 +5983,7 @@ const char* controllerTypesPaths[] = {
 	"MODELS/FRONTEND_X360.TXD",
 	"MODELS/FRONTEND_XONE.TXD",
 	"MODELS/FRONTEND_NSW.TXD",
+	nil, // keyboard: falls back to frontend2
 };
 
 void

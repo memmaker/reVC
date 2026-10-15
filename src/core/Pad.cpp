@@ -1729,7 +1729,8 @@ void CPad::UpdatePads(void)
 #endif
 
 #ifdef DETECT_PAD_INPUT_SWITCH
-	if (GetPad(0)->PCTempJoyState.CheckForInput())
+	// modern: "Keyboard" hint type pins keyboard hints; the pad still drives the game
+	if (GetPad(0)->PCTempJoyState.CheckForInput() && FrontEndMenuManager.m_PrefsControllerType != CMenuManager::CONTROLLER_KEYBOARD)
 		IsAffectedByController = true;
 	else {
 #endif

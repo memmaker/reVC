@@ -413,14 +413,13 @@ void LoadINIControllerSettings()
 #endif
 #endif
 	// force to default GTA behaviour (never overwrite bindings on joy change/initialization) if user init'ed/set bindings before we introduced that
-	if (!ReadIniIfExists("Controller", "PadButtonsInited", &ControlsManager.ms_padButtonsInited)) {
-		ControlsManager.ms_padButtonsInited = cfg.get("Bindings").size() != 0 ? 16 : 0;
-	}
+	ControlsManager.ms_padButtonsInited = 0; // modern: the pad layout always comes from InitDefaultControlConfigJoyPad
 
 	for (int32 i = 0; i < MAX_CONTROLLERACTIONS; i++) {
 		char value[128];
 		if (ReadIniIfExists("Bindings", iniControllerActions[i], value, 128)) {
 			for (int32 j = 0; j < MAX_CONTROLLERTYPES; j++){
+				if (j == JOYSTICK) continue; // modern: pad bindings are not read from the ini
 				ControlsManager.ClearSettingsAssociatedWithAction((e_ControllerAction)i, (eControllerType)j);
 			}
 
@@ -434,7 +433,7 @@ void LoadINIControllerSettings()
 						break;
 					}
 				}
-				if (contType == -1)
+				if (contType == -1 || contType == JOYSTICK)
 					continue;
 
 				int contKey;

@@ -736,6 +736,7 @@ public:
 		CONTROLLER_XBOX360,
 		CONTROLLER_XBOXONE,
 		CONTROLLER_NINTENDO_SWITCH,
+		CONTROLLER_KEYBOARD, // modern: always show keyboard hints
 	};
 
 	int8 m_PrefsControllerType;

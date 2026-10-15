@@ -101,11 +101,11 @@ ProcessPlayer(CPlayerPed *ped, CPad *pad)
 	else if(hid){ ped->bIsVisible = true; hid = false; }
 	if(ped->bInVehicle && ped->m_pMyVehicle){
 		// ponytail: a tap still falls through to the stock "next station" handler
-		Wheel(pad, pad->GetChar('R'), NUM_RADIOS + 1, radioSel, ApplyRadio, ped);
+		Wheel(pad, pad->GetChar('R') || pad->NewState.LeftShoulder1, NUM_RADIOS + 1, radioSel, ApplyRadio, ped);
 		bInCover = false;
 		return;
 	}
-	Wheel(pad, pad->GetTab(), TOTAL_WEAPON_SLOTS, wheelSlot, ApplyWeapon, ped);
+	Wheel(pad, pad->GetTab() || pad->NewState.LeftShoulder1, TOTAL_WEAPON_SLOTS, wheelSlot, ApplyWeapon, ped);
 
 	// ---- cover: duck next to a wall snaps you to it, aiming pops you out ----
 	if(pad->DuckJustDown() && !bInCover && !ped->bIsDucking){

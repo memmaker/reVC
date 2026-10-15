@@ -371,7 +371,7 @@ enum Config {
 //#	define PS2_MENU_USEALLPAGEICONS
 #else
 #	define MAP_ENHANCEMENTS			// Adding waypoint and better mouse support
-#	if defined(XINPUT) || defined(GTA_HANDHELD)
+#	if defined(XINPUT) || defined(GTA_HANDHELD) || defined(RW_GL3) // modern: button-hint chooser on mac/web too
 #		define GAMEPAD_MENU		// Add gamepad menu
 #	endif
 #	define TRIANGLE_BACK_BUTTON

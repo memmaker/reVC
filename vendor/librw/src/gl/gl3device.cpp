@@ -1249,7 +1249,7 @@ getFramebufferRect(Raster *frameBuffer)
 	Raster *fb = frameBuffer->parent;
 	if(fb->type == Raster::CAMERA){
 #ifdef LIBRW_SDL2
-		SDL_GetWindowSize(glGlobals.window, &r.w, &r.h);
+		SDL_GL_GetDrawableSize(glGlobals.window, &r.w, &r.h); // the canvas backing store, not its CSS size
 #else
 		glfwGetFramebufferSize(glGlobals.window, &r.w, &r.h);
 #endif
@@ -1569,7 +1569,7 @@ startSDL2(void)
 			if (win)
 				SDL_SetWindowDisplayMode(win, &mode->mode);
 		} else {
-			win = SDL_CreateWindow(glGlobals.winTitle, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, glGlobals.winWidth, glGlobals.winHeight, SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
+			win = SDL_CreateWindow(glGlobals.winTitle, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, glGlobals.winWidth, glGlobals.winHeight, SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI);
 			if (win)
 				SDL_SetWindowDisplayMode(win, NULL);
 		}

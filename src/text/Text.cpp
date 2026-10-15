@@ -132,6 +132,10 @@ CText::Get(const char *key)
 #else
 		outstr = mission_keyArray.Search(key, &result);
 #endif
+	// modern: strings the shipped gxt lacks (gxt.exe is Windows-only; ponytail: rebuild the gxt when more are needed)
+	static const wchar kbd[] = {'K','E','Y','B','O','A','R','D',0}, typ[] = {'B','U','T','T','O','N',' ','H','I','N','T','S',0};
+	if (strcmp(key, "FEC_KBD") == 0) return (wchar*)kbd;
+	if (strcmp(key, "FEC_TYP") == 0) return (wchar*)typ;
 	return outstr;
 }
 

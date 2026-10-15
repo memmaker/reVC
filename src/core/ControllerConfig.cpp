@@ -482,53 +482,51 @@ void CControllerConfigManager::InitDefaultControlConfigJoyPad(uint32 buttons)
 	}
 	else
 	{
+		// modern: the GTA V pad layout. ids are MapIdToButtonId's: 1 B, 2 A, 3 X, 4 Y, 5 LT, 6 RT,
+		// 7 LB, 8 RB, 9 Back, 10 L3, 11 R3, 12 Start, 13 up, 14 right, 15 down, 16 left
 		switch (btn)
 		{
 		IF_BTN_IN_RANGE(16)
-			SetControllerKeyAssociatedWithAction(GO_LEFT,                           16, JOYSTICK);
+			SetControllerKeyAssociatedWithAction(PED_CYCLE_WEAPON_LEFT,             16, JOYSTICK);
+			SetControllerKeyAssociatedWithAction(VEHICLE_LOOKLEFT,                  16, JOYSTICK);
 		IF_BTN_IN_RANGE(15)
-			SetControllerKeyAssociatedWithAction(GO_BACK,                           15, JOYSTICK);
+			SetControllerKeyAssociatedWithAction(TOGGLE_SUBMISSIONS,                15, JOYSTICK);
+			SetControllerKeyAssociatedWithAction(PED_SNIPER_ZOOM_OUT,               15, JOYSTICK);
 		IF_BTN_IN_RANGE(14)
-			SetControllerKeyAssociatedWithAction(GO_RIGHT,                          14, JOYSTICK);
+			SetControllerKeyAssociatedWithAction(PED_CYCLE_WEAPON_RIGHT,            14, JOYSTICK);
+			SetControllerKeyAssociatedWithAction(VEHICLE_LOOKRIGHT,                 14, JOYSTICK);
 		IF_BTN_IN_RANGE(13)
-			SetControllerKeyAssociatedWithAction(GO_FORWARD,                        13, JOYSTICK);
+			SetControllerKeyAssociatedWithAction(PED_SNIPER_ZOOM_IN,                13, JOYSTICK);
 		IF_BTN_IN_RANGE(12)
 		IF_BTN_IN_RANGE(11)
 			SetControllerKeyAssociatedWithAction(PED_LOOKBEHIND,                    11, JOYSTICK);
-			SetControllerKeyAssociatedWithAction(TOGGLE_SUBMISSIONS,                11, JOYSTICK);
+			SetControllerKeyAssociatedWithAction(VEHICLE_LOOKBEHIND,                11, JOYSTICK);
 		IF_BTN_IN_RANGE(10)
 			SetControllerKeyAssociatedWithAction(VEHICLE_HORN,                      10, JOYSTICK);
-			SetControllerKeyAssociatedWithAction(PED_DUCK,                          10, JOYSTICK);
 		IF_BTN_IN_RANGE(9)
 			SetControllerKeyAssociatedWithAction(CAMERA_CHANGE_VIEW_ALL_SITUATIONS,  9, JOYSTICK);
 		IF_BTN_IN_RANGE(8)
 			SetControllerKeyAssociatedWithAction(VEHICLE_HANDBRAKE,                  8, JOYSTICK);
-			SetControllerKeyAssociatedWithAction(PED_LOCK_TARGET,                    8, JOYSTICK);
+			SetControllerKeyAssociatedWithAction(PED_DUCK,                           8, JOYSTICK);
 		IF_BTN_IN_RANGE(7)
-			SetControllerKeyAssociatedWithAction(PED_ANSWER_PHONE,                   7, JOYSTICK);
-			SetControllerKeyAssociatedWithAction(VEHICLE_CHANGE_RADIO_STATION,       7, JOYSTICK);
+			SetControllerKeyAssociatedWithAction(PED_ANSWER_PHONE,                   7, JOYSTICK); // held: weapon wheel
+			SetControllerKeyAssociatedWithAction(VEHICLE_CHANGE_RADIO_STATION,       7, JOYSTICK); // held: radio wheel
 		IF_BTN_IN_RANGE(6)
-			SetControllerKeyAssociatedWithAction(PED_CYCLE_WEAPON_RIGHT,             6, JOYSTICK);
-			SetControllerKeyAssociatedWithAction(VEHICLE_LOOKRIGHT,                  6, JOYSTICK);
+			SetControllerKeyAssociatedWithAction(VEHICLE_ACCELERATE,                 6, JOYSTICK);
+			SetControllerKeyAssociatedWithAction(PED_FIREWEAPON,                     6, JOYSTICK);
+#ifdef BIND_VEHICLE_FIREWEAPON
+			SetControllerKeyAssociatedWithAction(VEHICLE_FIREWEAPON,                 6, JOYSTICK);
+#endif
 		IF_BTN_IN_RANGE(5)
-			SetControllerKeyAssociatedWithAction(PED_CYCLE_WEAPON_LEFT,              5, JOYSTICK);
-			SetControllerKeyAssociatedWithAction(VEHICLE_LOOKLEFT,                   5, JOYSTICK);
-		/*******************************************************************************************/
+			SetControllerKeyAssociatedWithAction(VEHICLE_BRAKE,                      5, JOYSTICK);
+			SetControllerKeyAssociatedWithAction(PED_LOCK_TARGET,                    5, JOYSTICK);
 		IF_BTN_IN_RANGE(4)
 			SetControllerKeyAssociatedWithAction(VEHICLE_ENTER_EXIT,                 4, JOYSTICK);
 		IF_BTN_IN_RANGE(3)
-			SetControllerKeyAssociatedWithAction(VEHICLE_BRAKE,                      3, JOYSTICK);
 			SetControllerKeyAssociatedWithAction(PED_JUMPING,                        3, JOYSTICK);
-			SetControllerKeyAssociatedWithAction(PED_SNIPER_ZOOM_IN,                 3, JOYSTICK);
 		IF_BTN_IN_RANGE(2)
-			SetControllerKeyAssociatedWithAction(VEHICLE_ACCELERATE,                 2, JOYSTICK);
 			SetControllerKeyAssociatedWithAction(PED_SPRINT,                         2, JOYSTICK);
-			SetControllerKeyAssociatedWithAction(PED_SNIPER_ZOOM_OUT,                2, JOYSTICK);
 		IF_BTN_IN_RANGE(1)
-			SetControllerKeyAssociatedWithAction(PED_FIREWEAPON,                     1, JOYSTICK);
-#ifdef BIND_VEHICLE_FIREWEAPON
-			SetControllerKeyAssociatedWithAction(VEHICLE_FIREWEAPON,                 1, JOYSTICK);
-#endif
 		/*******************************************************************************************/
 		}
 	}
